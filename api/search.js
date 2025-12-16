@@ -1,25 +1,6 @@
-import express from "express";
 import axios from "axios";
 import * as cheerio from "cheerio";
-import path from "path";
-import { fileURLToPath } from "url";
-import cors from "cors";
 import ExcelJS from "exceljs";
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(cors());
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// statyczne pliki z katalogu głównego (index.html, style.css, itp.)
-app.use(express.static(__dirname));
-
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
-});
 
 function splitAddress(address) {
     const postalCodeRegex = /(\d{2}-\d{3})/;
@@ -65,8 +46,6 @@ async function getPageCount(url) {
 
 async function getFirmDataFromPage(url) {
     try {
-        console.log(`Pobieram dane ze strony: ${url}`);
-
         const response = await axios.get(url, {
             headers: {
                 "User-Agent": "Mozilla/5.0",
@@ -126,8 +105,8 @@ async function getFirmDataFromPage(url) {
     }
 }
 
-// GŁÓWNY ENDPOINT API – generuje EXCEL i wysyła go jako download
-app.get("/api/search", async (req, res) => {
+// Vercel handler
+export default async function handler(req, res) {
     const { job, location } = req.query;
 
     if (!job || !location) {
@@ -145,11 +124,8 @@ app.get("/api/search", async (req, res) => {
         for (let page = 1; page <= pageCount; page++) {
             const pageUrl = `${baseUrl},${page}.html`;
             const firms = await getFirmDataFromPage(pageUrl);
-            console.log(`Strona ${page}: pobrano ${firms.length} firm`);
             allFirms.push(...firms);
         }
-
-        console.log(`Razem pobrano firm: ${allFirms.length}`);
 
         if (allFirms.length === 0) {
             return res
@@ -181,7 +157,6 @@ app.get("/api/search", async (req, res) => {
         });
 
         const buffer = await workbook.xlsx.writeBuffer();
-
         const safeJob = job.replace(/\s+/g, "_");
         const safeLocation = location.replace(/\s+/g, "_");
         const filename = `${safeJob}_${safeLocation}.xlsx`;
@@ -200,8 +175,4 @@ app.get("/api/search", async (req, res) => {
         console.error("Błąd głównej funkcji:", err.message);
         res.status(500).json({ error: "Błąd podczas pobierania danych" });
     }
-});
-
-app.listen(PORT, () => {
-    console.log(`Serwer działa na porcie ${PORT}`);
-});
+}
