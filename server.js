@@ -79,10 +79,11 @@ async function getFirmDataFromPage(url) {
         const firms = [];
 
         $("li.company-item").each((i, el) => {
-            const name = $(el)
-                .find("a.company-name.addax.addax-cs_hl_hit_company_name_click")
-                .text()
-                .trim() || "";
+            const name =
+                $(el)
+                    .find("a.company-name.addax.addax-cs_hl_hit_company_name_click")
+                    .text()
+                    .trim() || "";
 
             const phone =
                 $(el)
