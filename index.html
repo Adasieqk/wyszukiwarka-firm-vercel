@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pl">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Wyszukiwarka firm</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div class="center-container">
+            <h2>Wyszukiwarka firm</h2>
+
+            <input type="text" id="job" placeholder="Branża (np. mechanik)" />
+            <input
+                type="text"
+                id="location"
+                placeholder="Miasto (np. Gorlice)"
+            />
+
+            <button id="searchBtn">Szukaj</button>
+
+            <div id="message"></div>
+        </div>
+
+        <script>
+            const jobInput = document.getElementById("job");
+            const locationInput = document.getElementById("location");
+            const btn = document.getElementById("searchBtn");
+            const msg = document.getElementById("message");
+
+            async function search() {
+                const job = jobInput.value.trim();
+                const location = locationInput.value.trim();
+
+                if (!job || !location) {
+                    msg.textContent = "Uzupełnij oba pola.";
+                    return;
+                }
+
+                msg.textContent = "Trwa pobieranie danych...";
+
+                try {
+                    const res = await fetch(
+                        `/api/search?job=${encodeURIComponent(
+                            job
+                        )}&location=${encodeURIComponent(location)}`
+                    );
+
+                    if (!res.ok) {
+                        msg.textContent = "Błąd podczas pobierania danych.";
+                        return;
+                    }
+
+                    // jeśli backend zwróci JSON z błędem zamiast pliku
+                    const contentType = res.headers.get("Content-Type") || "";
+                    if (contentType.includes("application/json")) {
+                        const data = await res.json();
+                        msg.textContent = data.error || "Brak danych.";
+                        return;
+                    }
+
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `${job.replace(
+                        /\s+/g,
+                        "_"
+                    )}_${location.replace(/\s+/g, "_")}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+
+                    msg.textContent = "Plik został pobrany.";
+                } catch (e) {
+                    console.error(e);
+                    msg.textContent = "Wystąpił błąd.";
+                }
+            }
+
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                search();
+            });
+
+            jobInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    search();
+                }
+            });
+
+            locationInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    search();
+                }
+            });
+        </script>
+    </body>
+</html>
