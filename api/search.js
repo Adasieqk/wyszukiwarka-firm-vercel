@@ -107,7 +107,7 @@ async function getFirmDataFromPage(url) {
 
 // Vercel handler
 export default async function handler(req, res) {
-    const { job, location } = req.query;
+    const { job, location, filterNoWebsite } = req.query;
 
     if (!job || !location) {
         return res.status(400).json({ error: "Brak danych" });
@@ -125,6 +125,10 @@ export default async function handler(req, res) {
             const pageUrl = `${baseUrl},${page}.html`;
             const firms = await getFirmDataFromPage(pageUrl);
             allFirms.push(...firms);
+        }
+
+        if (filterNoWebsite === "true") {
+            allFirms = allFirms.filter(firm => !firm.website || firm.website.trim() === "");
         }
 
         if (allFirms.length === 0) {
@@ -159,7 +163,10 @@ export default async function handler(req, res) {
         const buffer = await workbook.xlsx.writeBuffer();
         const safeJob = job.replace(/\s+/g, "_");
         const safeLocation = location.replace(/\s+/g, "_");
-        const filename = `${safeJob}_${safeLocation}.xlsx`;
+        let filename = `${safeLocation}_${safeJob}.xlsx`;
+        if (filterNoWebsite === "true") {
+            filename = filename.replace('.xlsx', '_bez-strony.xlsx');
+        }
 
         res.setHeader(
             "Content-Type",

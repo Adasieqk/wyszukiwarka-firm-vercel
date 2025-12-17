@@ -46,6 +46,21 @@ body {
     font-family: "Lato", Arial, sans-serif;
 }
 
+.center-container input[type="checkbox"] {
+    vertical-align: middle;
+    margin: 0;
+}
+
+.center-container label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 13px;
+    font-family: "Lato", Arial, sans-serif;
+    color: #303950;
+    white-space: nowrap;
+}
+
 .center-container input:focus {
     border-color: #888aa8;
 }

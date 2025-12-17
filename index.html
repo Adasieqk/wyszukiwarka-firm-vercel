@@ -16,6 +16,11 @@
                 placeholder="Miasto (np. Kraków)"
             />
 
+            <label for="noWebsiteFilter">
+                <input type="checkbox" id="noWebsiteFilter" />
+                bez strony WWW
+            </label>
+
             <button id="searchBtn">Szukaj</button>
 
             <div id="message"></div>
@@ -24,6 +29,7 @@
         <script>
             const jobInput = document.getElementById("job");
             const locationInput = document.getElementById("location");
+            const noWebsiteFilter = document.getElementById("noWebsiteFilter");
             const btn = document.getElementById("searchBtn");
             const msg = document.getElementById("message");
 
@@ -39,12 +45,14 @@
                 msg.textContent = "Trwa pobieranie danych...";
 
                 try {
-                    const res = await fetch(
-                        `/api/search?job=${encodeURIComponent(
-                            job
-                        )}&location=${encodeURIComponent(location)}`
-                    );
+                    let apiUrl = `/api/search?job=${encodeURIComponent(
+                        job
+                    )}&location=${encodeURIComponent(location)}`;
+                    if (noWebsiteFilter.checked) {
+                        apiUrl += "&filterNoWebsite=true";
+                    }
 
+                    const res = await fetch(apiUrl);
                     if (!res.ok) {
                         msg.textContent = "Błąd podczas pobierania danych.";
                         return;
@@ -59,13 +67,20 @@
                     }
 
                     const blob = await res.blob();
+                    let downloadName = `${location.replace(
+                        /\s+/g,
+                        "_"
+                    )}_${job.replace(/\s+/g, "_")}.xlsx`;
+                    if (noWebsiteFilter.checked) {
+                        downloadName = downloadName.replace(
+                            ".xlsx",
+                            "_bez-strony.xlsx"
+                        );
+                    }
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.href = url;
-                    a.download = `${job.replace(
-                        /\s+/g,
-                        "_"
-                    )}_${location.replace(/\s+/g, "_")}.xlsx`;
+                    a.download = downloadName;
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
